@@ -61,12 +61,30 @@ def main() -> int:
         parser.print_help()
         return 0
     
-    # Dispatch to command handlers (to be implemented)
-    print(f"OFS: Command '{args.command}' not yet implemented")
-    print("Phase 0 (Project Foundation) complete!")
-    print("Next: Implement core functionality in Phase 1")
-    
-    return 0
+    # Dispatch to command handlers
+    try:
+        if args.command == "add":
+            from ofs.commands.add import execute as add_execute
+            return add_execute(args.paths)
+            
+        elif args.command == "status":
+            from ofs.commands.status import execute as status_execute
+            return status_execute()
+            
+        elif args.command == "init":
+            from ofs.core.repository.init import Repository
+            repo = Repository()
+            success = repo.initialize()
+            return 0 if success else 1
+            
+        else:
+            print(f"OFS: Command '{args.command}' not yet implemented")
+            print("Available: init, add, status")
+            return 1
+            
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return 1
 
 
 if __name__ == "__main__":
