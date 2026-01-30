@@ -40,20 +40,62 @@ python -m ofs init
 python -m ofs add myfile.txt
 python -m ofs add src/
 
-# Create a commit
-python -m ofs commit -m "Initial commit"
-
-# View status
+# View what's staged
 python -m ofs status
 
-# View history
+# Create a commit snapshot
+python -m ofs commit -m "Initial commit"
+
+# View commit history
 python -m ofs log
 
-# Checkout a previous commit
+# View compact history
+python -m ofs log --oneline
+
+# Restore to a previous commit
 python -m ofs checkout 001
 
 # Verify repository integrity
 python -m ofs verify
+```
+
+### Example Workflow
+
+```bash
+# 1. Initialize repository
+python -m ofs init
+
+# 2. Create some files
+echo "Hello, OFS!" > hello.txt
+mkdir src
+echo "print('Hello')" > src/main.py
+
+# 3. Stage files
+python -m ofs add .
+
+# 4. Create first commit
+python -m ofs commit -m "Add initial files"
+# Output: [main 001] Add initial files
+
+# 5. Make changes
+echo "World!" >> hello.txt
+
+# 6. Stage and commit changes
+python -m ofs add hello.txt
+python -m ofs commit -m "Update hello.txt"
+# Output: [main 002] Update hello.txt
+
+# 7. View history
+python -m ofs log --oneline
+# 002 2026-01-30 20:45 user  Update hello.txt
+# 001 2026-01-30 20:40 user  Add initial files
+
+# 8. Go back to first commit
+python -m ofs checkout 001
+# Output: ✓ Checked out to commit 001 "Add initial files"
+
+# 9. Return to latest
+python -m ofs checkout 002
 ```
 
 ## Use Cases
@@ -68,16 +110,28 @@ OFS is ideal for:
 
 ## Project Status
 
-**Current Version**: 0.1.0 (In Development)
+**Current Version**: 0.3.0 (Phase 3 Complete) ✅
 
-This is an active development project. See [OFS_Implementation_Checklist_v2.0.md](OFS_Implementation_Checklist_v2.0.md) for detailed implementation roadmap.
+**Completed Phases:**
+- ✅ Phase 0: Project Foundation
+- ✅ Phase 1: Core Storage (Object Store, Index)
+- ✅ Phase 2: File Operations (add, status)
+- ✅ Phase 3: Commit System (commit, log, checkout)
+
+**Test Coverage:** 82.67% (145 tests, 142 passing)
+
+See [Implementation Checklist](docs/requirements/OFS_Implementation_Checklist_v2.0.md) for the complete roadmap.
 
 ## Documentation
 
-- [Product Requirements Document](OFS_Enhanced_PRD_v2.0.md) - Complete specification
-- [Enhancement Summary](OFS_Enhancement_Summary.md) - Project overview
-- [File Structure](OFS_File_Structure_Detailed.md) - Detailed architecture
-- [Implementation Checklist](OFS_Implementation_Checklist_v2.0.md) - Development roadmap
+**User Documentation:**
+- [User Guide](docs/USER_GUIDE.md) - Complete command reference and examples
+- [Phase 3 Summary](docs/phase3/Phase3_Summary.md) - Latest implementation details
+
+**Technical Documentation:**
+- [Product Requirements Document](docs/requirements/OFS_Enhanced_PRD_v2.0.md) - Complete specification
+- [Architecture](docs/ARCHITECTURE.md) - System design
+- [Implementation Checklist](docs/requirements/OFS_Implementation_Checklist_v2.0.md) - Development roadmap
 
 ## Requirements
 

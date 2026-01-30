@@ -49,6 +49,7 @@ def main() -> int:
     
     # Verify command
     verify_parser = subparsers.add_parser("verify", help="Verify repository integrity")
+    verify_parser.add_argument("--verbose", action="store_true", help="Show detailed output")
     
     # Diff command
     diff_parser = subparsers.add_parser("diff", help="Show changes")
@@ -71,6 +72,30 @@ def main() -> int:
             from ofs.commands.status import execute as status_execute
             return status_execute()
             
+        elif args.command == "commit":
+            from ofs.commands.commit import execute as commit_execute
+            return commit_execute(args.message)
+            
+        elif args.command == "log":
+            from ofs.commands.log import execute as log_execute
+            return log_execute(
+                limit=args.number if hasattr(args, 'number') else None,
+                oneline=args.oneline if hasattr(args, 'oneline') else False
+            )
+            
+        elif args.command == "checkout":
+            from ofs.commands.checkout import execute as checkout_execute
+            return checkout_execute(
+                args.commit_id,
+                force=args.force if hasattr(args, 'force') else False
+            )
+            
+        elif args.command == "verify":
+            from ofs.commands.verify import execute as verify_execute
+            return verify_execute(
+                verbose=args.verbose if hasattr(args, 'verbose') else False
+            )
+            
         elif args.command == "init":
             from ofs.core.repository.init import Repository
             repo = Repository()
@@ -79,7 +104,7 @@ def main() -> int:
             
         else:
             print(f"OFS: Command '{args.command}' not yet implemented")
-            print("Available: init, add, status")
+            print("Available: init, add, status, commit, log, checkout, verify")
             return 1
             
     except Exception as e:
