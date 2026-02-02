@@ -68,8 +68,8 @@ def execute(message: str, repo_root: Path = None) -> int:
     if parent_id:
         parent_commit = load_commit(parent_id, repo.commits_dir)
     
-    # Determine file actions
-    files_with_actions = get_file_actions(staged_files, parent_commit)
+    # Determine file actions (pass commits_dir for full tree comparison)
+    files_with_actions = get_file_actions(staged_files, parent_commit, repo.commits_dir)
     
     # Filter out "unchanged" files (only include added/modified/deleted)
     files_to_commit = [

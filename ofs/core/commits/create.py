@@ -55,31 +55,41 @@ def generate_commit_id(commits_dir: Path) -> str:
 
 def get_file_actions(
     staged_files: List[dict],
-    parent_commit: Optional[dict]
+    parent_commit: Optional[dict],
+    commits_dir: Path = None
 ) -> List[dict]:
     """Determine action for each staged file (added/modified/deleted).
     
-    Compares staged files with parent commit to determine actions.
+    Compares staged files with FULL tree state at parent commit
+    to correctly determine actions.
     
     Args:
         staged_files: List of staged file entries from index
         parent_commit: Parent commit object (None for first commit)
+        commits_dir: Path to commits directory (needed for tree traversal)
         
     Returns:
         List of file entries with "action" field added
         
     Example:
-        >>> files = get_file_actions(staged, parent)
+        >>> files = get_file_actions(staged, parent, commits_dir)
         >>> files[0]["action"]
         "added"
     """
     files_with_actions = []
     
-    # Build map of parent files for quick lookup
+    # Build map of FULL tree state at parent for comparison
     parent_files = {}
-    if parent_commit:
+    if parent_commit and commits_dir:
+        # Import here to avoid circular dependency
+        from ofs.commands.checkout.execute import build_tree_state
+        parent_tree = build_tree_state(parent_commit.get('id'), commits_dir)
+        parent_files = parent_tree
+    elif parent_commit:
+        # Fallback to just parent commit files if commits_dir not provided
         for file in parent_commit.get("files", []):
-            parent_files[file["path"]] = file
+            if file.get("action") != "deleted":
+                parent_files[file["path"]] = file
     
     # Determine action for each staged file
     for staged_file in staged_files:
@@ -89,7 +99,7 @@ def get_file_actions(
         if path not in parent_files:
             # New file
             file_entry["action"] = "added"
-        elif parent_files[path]["hash"] != staged_file["hash"]:
+        elif parent_files[path].get("hash") != staged_file.get("hash"):
             # File exists but hash changed
             file_entry["action"] = "modified"
         else:
@@ -98,11 +108,11 @@ def get_file_actions(
         
         files_with_actions.append(file_entry)
     
-    # Check for deleted files (in parent but not in staged)
-    if parent_commit:
+    # Check for deleted files (in parent tree but not in staged)
+    if parent_files:
         staged_paths = {f["path"] for f in staged_files}
-        for parent_file in parent_commit.get("files", []):
-            if parent_file["path"] not in staged_paths:
+        for path, parent_file in parent_files.items():
+            if path not in staged_paths:
                 deleted_entry = parent_file.copy()
                 deleted_entry["action"] = "deleted"
                 files_with_actions.append(deleted_entry)

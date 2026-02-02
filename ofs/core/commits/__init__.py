@@ -7,7 +7,7 @@ from .create import (
     get_author_info,
 )
 from .save import save_commit
-from .load import load_commit, get_parent_commit
+from .load import load_commit, get_parent_commit, clear_commit_cache
 from .list import list_commits, get_commit_count
 
 __all__ = [
@@ -18,6 +18,7 @@ __all__ = [
     "save_commit",
     "load_commit",
     "get_parent_commit",
+    "clear_commit_cache",
     "list_commits",
     "get_commit_count",
 ]

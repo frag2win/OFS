@@ -11,31 +11,46 @@ from ofs.commands.checkout import execute as checkout_execute
 @pytest.fixture
 def test_repo(tmp_path):
     """Create a test repository with some commits."""
+    # Clear commit cache to avoid cross-test pollution
+    from ofs.core.commits import clear_commit_cache
+    clear_commit_cache()
+    
     repo = Repository(tmp_path)
     repo.initialize()
     
-    # Create first commit
+    # Create first commit - only file1
     file1 = tmp_path / "file1.txt"
     file1.write_text("First version")
     add_execute([str(file1)], tmp_path)
     commit_execute("First commit", tmp_path)
+    clear_commit_cache()  # Clear between commits
     
-    # Create second commit
+    # Create second commit - add file2, keep file1
     file2 = tmp_path / "file2.txt"
     file2.write_text("Second file")
-    add_execute([str(file2)], tmp_path)
+    # Stage BOTH files to indicate file1 is still there
+    add_execute([str(file1), str(file2)], tmp_path)
     commit_execute("Second commit", tmp_path)
+    clear_commit_cache()  # Clear between commits
     
-    # Create third commit (modify file1)
+    # Create third commit - modify file1, keep file2
     file1.write_text("Modified version")
-    add_execute([str(file1)], tmp_path)
+    # Stage BOTH files to indicate file2 is still there
+    add_execute([str(file1), str(file2)], tmp_path)
     commit_execute("Third commit", tmp_path)
+    
+    # Clear cache to ensure fresh reads
+    clear_commit_cache()
     
     return tmp_path
 
 
 def test_checkout_to_previous_commit(test_repo):
     """Test checking out to a previous commit."""
+    # Clear cache at start of test
+    from ofs.core.commits import clear_commit_cache
+    clear_commit_cache()
+    
     # Checkout to commit 001
     result = checkout_execute("001", force=True, repo_root=test_repo)
     

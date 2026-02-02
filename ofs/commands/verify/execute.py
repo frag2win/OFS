@@ -45,9 +45,9 @@ def execute(verbose: bool = False, repo_root: Path = None) -> int:
         name = component_names[component]
         
         if result["success"]:
-            print(f"✓ {name}: OK")
+            print(f"[OK] {name}: OK")
         else:
-            print(f"✗ {name}: FAILED")
+            print(f"[FAIL] {name}: FAILED")
             if verbose or True:  # Always show errors
                 for error in result["errors"]:
                     print(f"  - {error}")
@@ -55,13 +55,13 @@ def execute(verbose: bool = False, repo_root: Path = None) -> int:
     print()
     
     if success:
-        print("✓ Repository verification passed")
+        print("[OK] Repository verification passed")
         print("  All checks successful")
         return 0
     else:
         # Count total errors
         total_errors = sum(len(r["errors"]) for r in results.values())
-        print(f"✗ Repository verification failed")
+        print(f"[FAIL] Repository verification failed")
         print(f"  {total_errors} error(s) found")
         print()
         print("Hint: Run 'ofs verify --verbose' for detailed error information")

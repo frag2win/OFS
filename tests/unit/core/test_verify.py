@@ -65,9 +65,14 @@ def test_verify_objects_missing_object(test_repo):
     objects_dir = repo.ofs_dir / "objects"
     
     # Find and delete an object
-    for obj_file in objects_dir.rglob("*.blob"):
-        obj_file.unlink()
-        break
+    # Objects stored as objects/ab/cdef... (prefix dir / suffix filename)
+    for prefix_dir in objects_dir.iterdir():
+        if prefix_dir.is_dir() and len(prefix_dir.name) == 2:
+            for obj_file in prefix_dir.iterdir():
+                if obj_file.is_file():
+                    obj_file.unlink()
+                    break
+            break
     
     # Verify should detect missing object
     success, errors = verify_objects(repo)
@@ -88,8 +93,12 @@ def test_verify_index_missing_object_reference(test_repo):
     repo = Repository(test_repo)
     objects_dir = repo.ofs_dir / "objects"
     
-    for obj_file in objects_dir.rglob("*.blob"):
-        obj_file.unlink()
+    # Objects stored as objects/ab/cdef... (prefix dir / suffix filename)
+    for prefix_dir in objects_dir.iterdir():
+        if prefix_dir.is_dir() and len(prefix_dir.name) == 2:
+            for obj_file in prefix_dir.iterdir():
+                if obj_file.is_file():
+                    obj_file.unlink()
     
     # Verify index should fail
     success, errors = verify_index(repo)
@@ -127,8 +136,12 @@ def test_verify_commits_missing_object(test_repo):
     repo = Repository(test_repo)
     objects_dir = repo.ofs_dir / "objects"
     
-    for obj_file in objects_dir.rglob("*.blob"):
-        obj_file.unlink()
+    # Objects stored as objects/ab/cdef... (prefix dir / suffix filename)
+    for prefix_dir in objects_dir.iterdir():
+        if prefix_dir.is_dir() and len(prefix_dir.name) == 2:
+            for obj_file in prefix_dir.iterdir():
+                if obj_file.is_file():
+                    obj_file.unlink()
     
     # Verify commits should detect missing object
     success, errors = verify_commits(repo)
@@ -208,10 +221,15 @@ def test_verify_hash_mismatch(test_repo):
     repo = Repository(test_repo)
     objects_dir = repo.ofs_dir / "objects"
     
-    for obj_file in objects_dir.rglob("*.blob"):
-        # Overwrite with different content
-        obj_file.write_bytes(b"corrupted content")
-        break
+    # Objects stored as objects/ab/cdef... (prefix dir / suffix filename)
+    for prefix_dir in objects_dir.iterdir():
+        if prefix_dir.is_dir() and len(prefix_dir.name) == 2:
+            for obj_file in prefix_dir.iterdir():
+                if obj_file.is_file():
+                    # Overwrite with different content
+                    obj_file.write_bytes(b"corrupted content")
+                    break
+            break
     
     # Verify objects should detect hash mismatch
     success, errors = verify_objects(repo)

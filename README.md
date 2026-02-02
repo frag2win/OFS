@@ -57,6 +57,7 @@ python -m ofs checkout 001
 
 # Verify repository integrity
 python -m ofs verify
+python -m ofs verify --verbose  # Detailed output
 ```
 
 ### Example Workflow
@@ -110,7 +111,7 @@ OFS is ideal for:
 
 ## Project Status
 
-**Current Version**: 0.3.0 (Phase 3 Complete) ✅
+**Current Version**: 0.3.1 (Phase 3 Refined) ✅
 
 **Completed Phases:**
 - ✅ Phase 0: Project Foundation
@@ -118,7 +119,16 @@ OFS is ideal for:
 - ✅ Phase 2: File Operations (add, status)
 - ✅ Phase 3: Commit System (commit, log, checkout)
 
-**Test Coverage:** 82.67% (145 tests, 142 passing)
+**Test Coverage:** 88.67% (299 tests, all passing) ✅
+
+**v0.3.1 Refinements:**
+- 🐛 Fixed critical checkout bug (ghost files not being removed)
+- 🐛 Fixed commit tracking bug (false deletion markers)  
+- 🧪 Resolved test cache pollution issues (stable test suite)
+- 📈 Improved test coverage from 78% to 88.67%
+- 🪟 Enhanced Windows compatibility (ASCII console output)
+- ✅ Added `verify` command for repository integrity checking
+- ⚡ Performance optimizations and code quality improvements
 
 See [Implementation Checklist](docs/requirements/OFS_Implementation_Checklist_v2.0.md) for the complete roadmap.
 
@@ -159,13 +169,34 @@ OFS uses a content-addressable storage model similar to Git but simplified for o
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Run tests
-python -m pytest tests/
+# Install development dependencies
+pip install pytest pytest-cov
+
+# Run all tests (299 tests)
+python -m pytest tests/unit/ tests/integration/ tests/reliability/
+
+# Run tests with coverage
+python -m pytest tests/ --cov=ofs --cov-report=term
 
 # Run linters
 python -m pylint ofs/
 python -m mypy ofs/
 ```
+
+### Testing
+
+OFS has comprehensive test coverage:
+
+- **Unit Tests**: Core module functionality (commits, refs, objects, index)
+- **Integration Tests**: End-to-end workflows (checkout, commit cycles)
+- **Reliability Tests**: Edge cases, error handling, corruption detection
+
+**Coverage by Module:**
+- Core commits: 95%+
+- Repository: 92%+  
+- Commands: 85-90%
+- Utils: 90-100%
+- CLI: 85%+
 
 ## Contributing
 

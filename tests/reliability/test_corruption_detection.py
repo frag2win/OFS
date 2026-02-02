@@ -24,6 +24,20 @@ def test_repo(tmp_path):
     return tmp_path
 
 
+def find_object_files(objects_dir: Path):
+    """Find all object files in the objects directory.
+    
+    Objects are stored as objects/ab/cdef... (2-char prefix dir / 62-char suffix).
+    """
+    object_files = []
+    for prefix_dir in objects_dir.iterdir():
+        if prefix_dir.is_dir() and len(prefix_dir.name) == 2:
+            for obj_file in prefix_dir.iterdir():
+                if obj_file.is_file() and not obj_file.suffix == '.tmp':
+                    object_files.append(obj_file)
+    return object_files
+
+
 def test_atomic_commit_interruption(test_repo):
     """Test that interrupted commits don't corrupt repository.
     
@@ -63,7 +77,7 @@ def test_incomplete_object_write(test_repo):
     add_execute([str(test_file)], test_repo)
     
     # Find the object file
-    object_files = list(objects_dir.rglob("*.blob"))
+    object_files = find_object_files(objects_dir)
     assert len(object_files) > 0
     
     # Corrupt by truncating (simulate incomplete write)
@@ -115,6 +129,10 @@ def test_missing_commit_file(test_repo):
     repo = Repository(test_repo)
     (repo.commits_dir / "002.json").unlink()
     
+    # Clear cache to ensure we read from disk
+    from ofs.core.commits import clear_commit_cache
+    clear_commit_cache()
+    
     # Verification might still pass if we don't traverse full history
     # But loading commit 002 should fail
     commit = load_commit("002", repo.commits_dir)
@@ -135,7 +153,7 @@ def test_corrupted_object_content(test_repo):
     repo = Repository(test_repo)
     objects_dir = repo.ofs_dir / "objects"
     
-    for obj_file in objects_dir.rglob("*.blob"):
+    for obj_file in find_object_files(objects_dir):
         # Replace content but keep file
         obj_file.write_bytes(b"Completely different corrupted content")
         break
@@ -157,7 +175,7 @@ def test_dangling_object_reference(test_repo):
     repo = Repository(test_repo)
     objects_dir = repo.ofs_dir / "objects"
     
-    for obj_file in objects_dir.rglob("*.blob"):
+    for obj_file in find_object_files(objects_dir):
         obj_file.unlink()
     
     # Verify should detect missing object
@@ -258,7 +276,7 @@ def test_object_hash_collision_simulation(test_repo):
     repo = Repository(test_repo)
     objects_dir = repo.ofs_dir / "objects"
     
-    object_files = list(objects_dir.rglob("*.blob"))
+    object_files = find_object_files(objects_dir)
     
     # Should have 2 distinct objects
     assert len(object_files) == 2
@@ -280,7 +298,7 @@ def test_repository_survives_multiple_corruptions(test_repo):
     
     # 2. Corrupt an object
     objects_dir = repo.ofs_dir / "objects"
-    for obj_file in objects_dir.rglob("*.blob"):
+    for obj_file in find_object_files(objects_dir):
         obj_file.write_bytes(b"corrupted")
         break
     

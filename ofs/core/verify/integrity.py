@@ -42,23 +42,39 @@ def verify_objects(repo: Repository) -> Tuple[bool, List[str]]:
     
     # Check each object file
     object_count = 0
-    for obj_file in objects_dir.rglob("*.blob"):
-        object_count += 1
-        file_hash = obj_file.stem
-        
-        try:
-            # Try to retrieve object
-            content = object_store.retrieve(file_hash)
+    
+    # Objects are stored as objects/ab/cdef... (prefix/suffix, no extension)
+    for prefix_dir in objects_dir.iterdir():
+        if not prefix_dir.is_dir():
+            continue
+        if prefix_dir.name.startswith('.'):
+            continue  # Skip hidden directories
             
-            # Verify hash matches content
-            from ofs.utils.hash.compute_bytes import compute_hash
-            actual_hash = compute_hash(content)
-            
-            if actual_hash != file_hash:
-                errors.append(f"Hash mismatch: {file_hash} (actual: {actual_hash})")
+        for obj_file in prefix_dir.iterdir():
+            if obj_file.is_dir():
+                continue
+            if obj_file.suffix == '.tmp':
+                continue  # Skip temp files
                 
-        except Exception as e:
-            errors.append(f"Cannot read object {file_hash}: {e}")
+            object_count += 1
+            
+            # Reconstruct full hash from path: prefix (2 chars) + filename (62 chars)
+            prefix = prefix_dir.name
+            suffix = obj_file.name
+            file_hash = prefix + suffix
+            
+            try:
+                # Read content and verify hash
+                content = obj_file.read_bytes()
+                
+                from ofs.utils.hash.compute_bytes import compute_hash
+                actual_hash = compute_hash(content)
+                
+                if actual_hash != file_hash:
+                    errors.append(f"Hash mismatch: {file_hash[:16]}... (actual: {actual_hash[:16]}...)")
+                    
+            except Exception as e:
+                errors.append(f"Cannot read object {file_hash[:16]}...: {e}")
     
     if object_count == 0:
         # Empty repo is ok
@@ -87,32 +103,40 @@ def verify_index(repo: Repository) -> Tuple[bool, List[str]]:
         # Empty index is ok
         return True, []
     
+    # First check if index is valid JSON directly (Index class catches errors)
     try:
-        index = Index(repo.index_file)
-        entries = index.get_entries()
+        content = repo.index_file.read_text()
+        entries = json.loads(content)
         
-        object_store = ObjectStore(repo.ofs_dir)
-        
-        for entry in entries:
-            file_hash = entry.get('hash')
-            file_path = entry.get('path')
+        if not isinstance(entries, list):
+            errors.append("Index file corrupted: not a list")
+            return False, errors
             
-            if not file_hash:
-                errors.append(f"Index entry missing hash: {file_path}")
-                continue
-            
-            if not file_path:
-                errors.append(f"Index entry missing path for hash {file_hash}")
-                continue
-            
-            # Check if object exists
-            if not object_store.exists(file_hash):
-                errors.append(f"Index references missing object: {file_hash} (path: {file_path})")
-                
     except json.JSONDecodeError as e:
         errors.append(f"Index file corrupted (invalid JSON): {e}")
+        return False, errors
     except Exception as e:
         errors.append(f"Cannot read index: {e}")
+        return False, errors
+    
+    # Now check object references
+    object_store = ObjectStore(repo.ofs_dir)
+    
+    for entry in entries:
+        file_hash = entry.get('hash')
+        file_path = entry.get('path')
+        
+        if not file_hash:
+            errors.append(f"Index entry missing hash: {file_path}")
+            continue
+        
+        if not file_path:
+            errors.append(f"Index entry missing path for hash {file_hash}")
+            continue
+        
+        # Check if object exists
+        if not object_store.exists(file_hash):
+            errors.append(f"Index references missing object: {file_hash} (path: {file_path})")
     
     return len(errors) == 0, errors
 
@@ -139,45 +163,57 @@ def verify_commits(repo: Repository) -> Tuple[bool, List[str]]:
         # No commits yet is ok
         return True, []
     
-    try:
-        commits = list_commits(commits_dir)
+    # First, validate all commit files directly
+    commit_files = sorted(commits_dir.glob("*.json"))
+    
+    if not commit_files:
+        # No commits is ok
+        return True, []
+    
+    commits = []
+    for commit_file in commit_files:
+        try:
+            content = commit_file.read_text()
+            commit = json.loads(content)
+            commits.append(commit)
+        except json.JSONDecodeError as e:
+            errors.append(f"Commit file corrupted ({commit_file.name}): invalid JSON")
+        except Exception as e:
+            errors.append(f"Cannot read commit {commit_file.name}: {e}")
+    
+    if errors:
+        return False, errors
+    
+    # Now check object references and parent links
+    object_store = ObjectStore(repo.ofs_dir)
+    seen_commits = set()
+    
+    for commit in commits:
+        commit_id = commit.get('id')
+        seen_commits.add(commit_id)
         
-        if not commits:
-            # No commits is ok
-            return True, []
+        # Check parent reference
+        parent_id = commit.get('parent')
+        if parent_id and parent_id not in seen_commits:
+            # Parent will be seen later (we're going reverse chronological)
+            pass
         
-        object_store = ObjectStore(repo.ofs_dir)
-        seen_commits = set()
-        
-        for commit in commits:
-            commit_id = commit.get('id')
-            seen_commits.add(commit_id)
+        # Check all file objects exist
+        files = commit.get('files', [])
+        for file_entry in files:
+            file_hash = file_entry.get('hash')
+            file_path = file_entry.get('path')
+            action = file_entry.get('action')
             
-            # Check parent reference
-            parent_id = commit.get('parent')
-            if parent_id and parent_id not in seen_commits:
-                # Parent will be seen later (we're going reverse chronological)
-                pass
+            if action == 'deleted':
+                continue  # Deleted files don't need objects
             
-            # Check all file objects exist
-            files = commit.get('files', [])
-            for file_entry in files:
-                file_hash = file_entry.get('hash')
-                file_path = file_entry.get('path')
-                action = file_entry.get('action')
-                
-                if action == 'deleted':
-                    continue  # Deleted files don't need objects
-                
-                if not file_hash:
-                    errors.append(f"Commit {commit_id}: file {file_path} missing hash")
-                    continue
-                
-                if not object_store.exists(file_hash):
-                    errors.append(f"Commit {commit_id}: missing object {file_hash} for {file_path}")
-                    
-    except Exception as e:
-        errors.append(f"Cannot verify commits: {e}")
+            if not file_hash:
+                errors.append(f"Commit {commit_id}: file {file_path} missing hash")
+                continue
+            
+            if not object_store.exists(file_hash):
+                errors.append(f"Commit {commit_id}: missing object {file_hash} for {file_path}")
     
     return len(errors) == 0, errors
 
