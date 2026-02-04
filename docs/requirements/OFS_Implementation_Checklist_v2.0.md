@@ -867,10 +867,10 @@ def test_commit_sequential_ids(tmp_repo):
 
 **File:** `ofs/commands/log.py`
 
-- [ ] Display commits in reverse chronological order
-- [ ] Support `--oneline` flag
-- [ ] Support `-n <count>` limit
-- [ ] Show file changes (optional `--stat`)
+- [x] Display commits in reverse chronological order
+- [x] Support `--oneline` flag
+- [x] Support `-n <count>` limit
+- [x] Show file changes (optional `--stat`)
 
 **Testing:**
 - Verify chronological order
@@ -885,13 +885,13 @@ def test_commit_sequential_ids(tmp_repo):
 
 **File:** `ofs/commands/checkout.py`
 
-- [ ] Validate commit exists
-- [ ] Detect uncommitted changes
-- [ ] Prompt for confirmation (unless `--force`)
-- [ ] Restore all files from commit
-- [ ] Verify hashes before writing
-- [ ] Remove files not in target commit
-- [ ] Update index and HEAD
+- [x] Validate commit exists
+- [x] Detect uncommitted changes
+- [x] Prompt for confirmation (unless `--force`)
+- [x] Restore all files from commit
+- [x] Verify hashes before writing
+- [x] Remove files not in target commit
+- [x] Update index and HEAD
 
 **Safety Implementation:**
 ```python
@@ -1030,12 +1030,12 @@ def test_checkout_force_overwrites(tmp_repo):
 
 **File:** `ofs/commands/verify.py`
 
-- [ ] Verify all object hashes
-- [ ] Verify commit chain integrity
-- [ ] Verify index consistency
-- [ ] Detect orphaned objects
-- [ ] Report detailed errors
-- [ ] Suggest recovery actions
+- [x] Verify all object hashes
+- [x] Verify commit chain integrity
+- [x] Verify index consistency
+- [x] Detect orphaned objects
+- [x] Report detailed errors
+- [x] Suggest recovery actions
 
 **Testing:**
 - Test with healthy repository → pass
