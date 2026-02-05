@@ -55,6 +55,7 @@ def main() -> int:
     diff_parser = subparsers.add_parser("diff", help="Show changes")
     diff_parser.add_argument("commit1", nargs="?", help="First commit (optional)")
     diff_parser.add_argument("commit2", nargs="?", help="Second commit (optional)")
+    diff_parser.add_argument("--cached", action="store_true", help="Show staged changes vs HEAD")
     
     args = parser.parse_args()
     
@@ -94,6 +95,14 @@ def main() -> int:
             from ofs.commands.verify import execute as verify_execute
             return verify_execute(
                 verbose=args.verbose if hasattr(args, 'verbose') else False
+            )
+            
+        elif args.command == "diff":
+            from ofs.commands.diff import execute as diff_execute
+            return diff_execute(
+                commit1=args.commit1 if hasattr(args, 'commit1') and args.commit1 else None,
+                commit2=args.commit2 if hasattr(args, 'commit2') and args.commit2 else None,
+                cached=args.cached if hasattr(args, 'cached') else False
             )
             
         elif args.command == "init":

@@ -12,9 +12,12 @@ import fnmatch
 def should_ignore(path: Path, patterns: List[str], repo_root: Path = None) -> bool:
     """Check if path should be ignored based on patterns.
     
+    Processes patterns in order. Negation patterns (starting with '!') 
+    un-ignore previously ignored files.
+    
     Args:
         path: Path to check
-        patterns: List of ignore patterns (glob style)
+        patterns: List of ignore patterns (glob style, '!' for negation)
         repo_root: Optional repository root for relative path calculation
         
     Returns:
@@ -22,10 +25,10 @@ def should_ignore(path: Path, patterns: List[str], repo_root: Path = None) -> bo
         
     Example:
         >>> from pathlib import Path
-        >>> patterns = ["*.tmp", "*.log", "__pycache__"]
-        >>> should_ignore(Path("file.tmp"), patterns)
+        >>> patterns = ["*.log", "!important.log"]
+        >>> should_ignore(Path("test.log"), patterns)
         True
-        >>> should_ignore(Path("file.py"), patterns)
+        >>> should_ignore(Path("important.log"), patterns)
         False
     """
     if not patterns:
@@ -43,22 +46,56 @@ def should_ignore(path: Path, patterns: List[str], repo_root: Path = None) -> bo
         except ValueError:
             pass
     
-    # Check each pattern
+    # Process patterns in order, tracking ignore state
+    ignored = False
+    
     for pattern in patterns:
-        # Direct match on filename
-        if fnmatch.fnmatch(path_name, pattern):
-            return True
+        # Handle negation patterns
+        if pattern.startswith('!'):
+            negate_pattern = pattern[1:]
+            if _matches_pattern(path_name, path_str, negate_pattern):
+                ignored = False  # Un-ignore
+        else:
+            if _matches_pattern(path_name, path_str, pattern):
+                ignored = True  # Ignore
+    
+    return ignored
+
+
+def _matches_pattern(path_name: str, path_str: str, pattern: str) -> bool:
+    """Check if path matches a single pattern.
+    
+    Args:
+        path_name: File/directory name only
+        path_str: Full path string
+        pattern: Pattern to match
         
-        # Match on full path (for directory patterns)
-        if fnmatch.fnmatch(path_str, pattern):
+    Returns:
+        bool: True if matches
+    """
+    # Handle directory patterns (ending with /)
+    if pattern.endswith('/'):
+        dir_pattern = pattern[:-1]  # Remove trailing slash
+        # Check if path starts with this directory
+        if path_str.startswith(dir_pattern + '/') or path_str.startswith(dir_pattern + '\\'):
             return True
-        
-        # Match on path parts (for **/pattern style)
-        if pattern.startswith("**/"):
-            pattern_without_prefix = pattern[3:]
-            if fnmatch.fnmatch(path_name, pattern_without_prefix):
-                return True
-                
+        if path_name == dir_pattern or path_str == dir_pattern:
+            return True
+    
+    # Direct match on filename
+    if fnmatch.fnmatch(path_name, pattern):
+        return True
+    
+    # Match on full path (for directory patterns)
+    if fnmatch.fnmatch(path_str, pattern):
+        return True
+    
+    # Match on path parts (for **/pattern style)
+    if pattern.startswith("**/"):
+        pattern_without_prefix = pattern[3:]
+        if fnmatch.fnmatch(path_name, pattern_without_prefix):
+            return True
+    
     return False
 
 

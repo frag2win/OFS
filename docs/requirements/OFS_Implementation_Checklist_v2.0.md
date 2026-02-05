@@ -1052,11 +1052,11 @@ def test_checkout_force_overwrites(tmp_repo):
 
 **File:** `ofs/commands/diff.py`
 
-- [ ] Show uncommitted changes
-- [ ] Compare two commits
-- [ ] Line-by-line diff for text files
-- [ ] Binary file detection
-- [ ] Color-coded output
+- [x] Show uncommitted changes
+- [x] Compare two commits
+- [x] Line-by-line diff for text files
+- [x] Binary file detection
+- [ ] Color-coded output (deferred to Phase 6)
 
 ---
 
@@ -1065,10 +1065,10 @@ def test_checkout_force_overwrites(tmp_repo):
 
 **File:** `ofs/utils/ignore.py`
 
-- [ ] Parse `.ofsignore` file
-- [ ] Glob pattern matching
-- [ ] Negation patterns (`!`)
-- [ ] Default patterns in config
+- [x] Parse `.ofsignore` file
+- [x] Glob pattern matching
+- [x] Negation patterns (`!`)
+- [x] Default patterns in config
 
 ---
 
