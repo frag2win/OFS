@@ -206,10 +206,11 @@ We welcome contributions! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for
 
 [To be determined - Please add license information]
 
-## Authors
+## Authors (Notes)
+Name - Shubham pawar 
+portfolio: https://shubham-pawar.vercel.app/
 
 OFS Development Team
-
 ## Support
 
 For issues and questions, please open an issue on GitHub.
