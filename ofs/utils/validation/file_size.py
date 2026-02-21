@@ -33,13 +33,13 @@ def check_file_size(file_path: Path, max_size: int = MAX_FILE_SIZE) -> tuple[boo
         >>> msg
         'File size 150MB exceeds maximum of 100MB'
     """
-    if not file_path.exists():
-        return False, f"File not found: {file_path}"
-    
-    if not file_path.is_file():
-        return False, f"Not a file: {file_path}"
-    
     try:
+        if not file_path.exists():
+            return False, f"File not found: {file_path}"
+        
+        if not file_path.is_file():
+            return False, f"Not a file: {file_path}"
+        
         file_size = file_path.stat().st_size
         
         if file_size > max_size:
@@ -49,7 +49,7 @@ def check_file_size(file_path: Path, max_size: int = MAX_FILE_SIZE) -> tuple[boo
         
         return True, ""
         
-    except Exception as e:
+    except OSError as e:
         return False, f"Error checking file size: {str(e)}"
 
 
