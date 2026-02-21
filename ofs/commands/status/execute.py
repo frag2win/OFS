@@ -80,6 +80,8 @@ def _print_status(staged: List[Path], modified: List[Path], untracked: List[Path
         modified: List of staged files that have been modified since staging
         untracked: List of files not staged
     """
+    from ofs.utils.ui.color import green, red
+    
     has_changes = bool(staged or modified or untracked)
     
     if not has_changes:
@@ -94,9 +96,9 @@ def _print_status(staged: List[Path], modified: List[Path], untracked: List[Path
         for file_path in sorted(staged):
             # Check if file was modified after staging
             if file_path in modified:
-                print(f"  modified:   {file_path}")
+                print(green(f"  modified:   {file_path}"))
             else:
-                print(f"  new file:   {file_path}")
+                print(green(f"  new file:   {file_path}"))
         print()
     
     # Modified files (staged but changed since)
@@ -105,7 +107,7 @@ def _print_status(staged: List[Path], modified: List[Path], untracked: List[Path
         print("  (use \"ofs add <file>...\" to update what will be committed)")
         print()
         for file_path in sorted(modified):
-            print(f"  modified:   {file_path}")
+            print(red(f"  modified:   {file_path}"))
         print()
     
     # Untracked files
@@ -114,5 +116,5 @@ def _print_status(staged: List[Path], modified: List[Path], untracked: List[Path
         print("  (use \"ofs add <file>...\" to include in what will be committed)")
         print()
         for file_path in sorted(untracked):
-            print(f"  {file_path}")
+            print(red(f"  {file_path}"))
         print()

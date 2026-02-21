@@ -1079,11 +1079,11 @@ def test_checkout_force_overwrites(tmp_repo):
 
 **File:** `ofs/__main__.py`
 
-- [ ] Argument parsing (argparse)
-- [ ] Command dispatch
-- [ ] `--help` for all commands
-- [ ] `--version` flag
-- [ ] Exit codes (0 = success, 1 = error)
+- [x] Argument parsing (argparse)
+- [x] Command dispatch
+- [x] `--help` for all commands
+- [x] `--version` flag
+- [x] Exit codes (0 = success, 1 = error)
 
 **CLI Structure:**
 ```python
@@ -1123,29 +1123,29 @@ if __name__ == "__main__":
 ```
 
 **Testing:**
-- Test each command via CLI
-- Test help text
-- Test invalid arguments
+- [x] Test each command via CLI
+- [x] Test help text
+- [x] Test invalid arguments
 
 ---
 
 ### P6.2 - Progress Indicators
 **Priority:** P1 | **Owner:** Frontend Dev | **Estimate:** 4 hours
 
-- [ ] Progress bar for large operations
-- [ ] Spinner for waiting
-- [ ] File count indicators
-- [ ] Percentage complete
+- [x] Progress bar for large operations
+- [x] Spinner for waiting
+- [x] File count indicators
+- [x] Percentage complete
 
 ---
 
 ### P6.3 - Color Output
 **Priority:** P2 | **Owner:** Frontend Dev | **Estimate:** 3 hours
 
-- [ ] Color-coded status messages
-- [ ] Respect `NO_COLOR` environment variable
-- [ ] `--no-color` flag
-- [ ] Detect terminal capabilities
+- [x] Color-coded status messages
+- [x] Respect `NO_COLOR` environment variable
+- [x] `--no-color` flag
+- [x] Detect terminal capabilities
 
 ---
 

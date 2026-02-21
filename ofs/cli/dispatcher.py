@@ -18,7 +18,14 @@ def main() -> int:
     parser.add_argument(
         "--version",
         action="version",
-        version="OFS 0.1.0",
+        version="OFS 1.0.0",
+        help="Show program's version number and exit"
+    )
+    
+    parser.add_argument(
+        "--no-color",
+        action="store_true",
+        help="Disable color output"
     )
     
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -58,6 +65,18 @@ def main() -> int:
     diff_parser.add_argument("--cached", action="store_true", help="Show staged changes vs HEAD")
     
     args = parser.parse_args()
+    
+    # Handle global flags
+    if hasattr(args, 'no_color') and args.no_color:
+        import os
+        os.environ["NO_COLOR"] = "1"
+        
+        # Also try to set it explicitly if the module is loaded
+        try:
+            from ofs.utils.ui.color import set_color_enabled
+            set_color_enabled(False)
+        except ImportError:
+            pass
     
     if args.command is None:
         parser.print_help()

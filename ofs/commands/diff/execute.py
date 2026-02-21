@@ -368,10 +368,15 @@ def _print_file_diff(
         new_path: New file path
         action: Action (new, deleted, modified)
     """
+    from ofs.utils.ui.color import red, green, cyan, bold
+    
     # Print header
     header = format_diff_header(old_path, new_path, action)
-    for line in header:
-        print(line)
+    for i, line in enumerate(header):
+        if i == 0:
+            print(bold(line))
+        else:
+            print(line)
     
     # Compute and print diff
     diff_lines = compute_file_diff(
@@ -382,6 +387,14 @@ def _print_file_diff(
     )
     
     for line in diff_lines:
-        print(line)
+        if line.startswith('@@'):
+            print(cyan(line))
+        elif line.startswith('+') and not line.startswith('+++'):
+            print(green(line))
+        elif line.startswith('-') and not line.startswith('---'):
+            print(red(line))
+        else:
+            print(line)
     
     print()  # Empty line between files
+

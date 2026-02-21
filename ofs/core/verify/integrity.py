@@ -43,7 +43,9 @@ def verify_objects(repo: Repository) -> Tuple[bool, List[str]]:
     # Check each object file
     object_count = 0
     
-    # Objects are stored as objects/ab/cdef... (prefix/suffix, no extension)
+    # Collect all object files
+    all_objects = []
+    
     for prefix_dir in objects_dir.iterdir():
         if not prefix_dir.is_dir():
             continue
@@ -55,26 +57,32 @@ def verify_objects(repo: Repository) -> Tuple[bool, List[str]]:
                 continue
             if obj_file.suffix == '.tmp':
                 continue  # Skip temp files
-                
-            object_count += 1
             
-            # Reconstruct full hash from path: prefix (2 chars) + filename (62 chars)
-            prefix = prefix_dir.name
-            suffix = obj_file.name
-            file_hash = prefix + suffix
+            all_objects.append((prefix_dir, obj_file))
+                
+    object_count = len(all_objects)
+    
+    from ofs.utils.ui.progress import track
+    from ofs.utils.hash.compute_bytes import compute_hash
+    
+    # Check each object file
+    for prefix_dir, obj_file in track(all_objects, description="Verifying objects"):
+        # Reconstruct full hash from path: prefix (2 chars) + filename (62 chars)
+        prefix = prefix_dir.name
+        suffix = obj_file.name
+        file_hash = prefix + suffix
+        
+        try:
+            # Read content and verify hash
+            content = obj_file.read_bytes()
             
-            try:
-                # Read content and verify hash
-                content = obj_file.read_bytes()
+            actual_hash = compute_hash(content)
+            
+            if actual_hash != file_hash:
+                errors.append(f"Hash mismatch: {file_hash[:16]}... (actual: {actual_hash[:16]}...)")
                 
-                from ofs.utils.hash.compute_bytes import compute_hash
-                actual_hash = compute_hash(content)
-                
-                if actual_hash != file_hash:
-                    errors.append(f"Hash mismatch: {file_hash[:16]}... (actual: {actual_hash[:16]}...)")
-                    
-            except Exception as e:
-                errors.append(f"Cannot read object {file_hash[:16]}...: {e}")
+        except Exception as e:
+            errors.append(f"Cannot read object {file_hash[:16]}...: {e}")
     
     if object_count == 0:
         # Empty repo is ok

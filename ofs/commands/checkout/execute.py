@@ -158,12 +158,15 @@ def execute(
     restored_count = 0
     removed_count = 0
     
-    for file_entry in files_to_restore:
+    from ofs.utils.ui.progress import track
+    
+    for file_entry in track(files_to_restore, description="Restoring files"):
         path = file_entry.get('path')
         file_hash = file_entry.get('hash')
         
         if not path or not file_hash:
             continue
+        
         
         file_path = repo_root / path
         

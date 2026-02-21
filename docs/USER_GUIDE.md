@@ -408,3 +408,28 @@ ofs commit --help
 ofs log --help
 ofs checkout --help
 ```
+
+---
+
+## Global CLI Options
+
+Starting in Phase 6, OFS supports several global flags to control output formatting and command-line experience:
+
+### `--version`
+Print the current version of the OFS client.
+```bash
+ofs --version
+# Output: OFS 1.0.0
+```
+
+### `--no-color`
+By default, OFS output (like `ofs status` and `ofs diff`) is colored using standard ANSI escape codes for readability (green for additions, red for deletions).
+If you want to disable colors (e.g. for scripting, or terminal incompatibility):
+```bash
+ofs --no-color status
+```
+*Note: OFS also respects the standard `NO_COLOR=1` environment variable.*
+
+### Progress Indicators
+For operations that process a large amount of files (`ofs add`, `ofs verify`, `ofs checkout`), OFS will automatically display a progress bar when run interactively in a terminal.
+If you pipe the output (e.g. `ofs verify > results.txt`), the progress bar disables itself automatically to prevent log corruption.

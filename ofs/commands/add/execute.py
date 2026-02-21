@@ -72,17 +72,20 @@ def execute(paths: List[str], repo_root: Path = None) -> int:
     # Initialize object store and index
     object_store = ObjectStore(repo.ofs_dir)
     index = Index(repo.index_file)
+    from ofs.utils.ui.progress import track
     
     # Stage each file
     staged_count = 0
     skipped_count = 0
     
-    for file_path in files_to_add:
+    for file_path in track(files_to_add, description="Staging files"):
         try:
             # Validate file size
             is_valid, error_msg = check_file_size(file_path)
             if not is_valid:
-                print(f"Skipping {file_path.name}: {error_msg}")
+                # Need to use a different logging mechanism or print cleanly around the progress bar
+                # For simplicity in V1 we just print, which might interleave slightly with the progress bar
+                print(f"\nSkipping {file_path.name}: {error_msg}")
                 skipped_count += 1
                 continue
             
