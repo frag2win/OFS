@@ -35,9 +35,6 @@ def atomic_write(file_path: Path, content: bytes) -> None:
     temp_path = file_path.with_suffix(file_path.suffix + ".tmp")
     temp_path.write_bytes(content)
     
-    # Atomic rename
-    # On Windows, rename may fail if target exists, so remove first
-    if os.name == "nt" and file_path.exists():
-        file_path.unlink()
-    
-    temp_path.rename(file_path)
+    # Atomic replace — works on both POSIX and Windows (Python 3.3+)
+    # Path.replace() atomically replaces the target if it exists
+    temp_path.replace(file_path)

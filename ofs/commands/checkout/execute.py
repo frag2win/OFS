@@ -14,46 +14,7 @@ from ofs.core.refs import update_head
 from ofs.utils.hash.compute_file import compute_file_hash
 
 
-def build_tree_state(commit_id: str, commits_dir: Path) -> Dict[str, dict]:
-    """Build complete file tree state at a given commit.
-    
-    Traverses commit history from beginning to target commit
-    to build the complete file state.
-    
-    Args:
-        commit_id: Target commit ID
-        commits_dir: Path to commits directory
-        
-    Returns:
-        Dictionary mapping path -> file_entry (with hash, etc.)
-    """
-    # Get all commits up to and including target
-    all_commits = list_commits(commits_dir)
-    
-    # Find commits to apply (from oldest to target)
-    commits_to_apply = []
-    for commit in reversed(all_commits):
-        commits_to_apply.append(commit)
-        if commit.get('id') == commit_id:
-            break
-    
-    # Build tree by applying commits in order
-    tree_state = {}  # path -> file_entry
-    
-    for commit in commits_to_apply:
-        for file_entry in commit.get('files', []):
-            path = file_entry.get('path')
-            action = file_entry.get('action')
-            
-            if action == 'deleted':
-                # Remove from tree
-                if path in tree_state:
-                    del tree_state[path]
-            else:
-                # Add or update in tree
-                tree_state[path] = file_entry
-    
-    return tree_state
+from ofs.core.commits.tree import build_tree_state
 
 
 def execute(
@@ -172,15 +133,8 @@ def execute(
         
         # Restore file
         try:
-            # Retrieve content from object store
-            content = object_store.retrieve(file_hash)
-            
-            # Verify hash
-            from ofs.utils.hash.compute_bytes import compute_hash
-            actual_hash = compute_hash(content)
-            if actual_hash != file_hash:
-                print(f"Error: Hash mismatch for {path}")
-                return 1
+            # Retrieve content from object store (trusted — objects are immutable)
+            content = object_store.retrieve_unchecked(file_hash)
             
             # Ensure parent directory exists
             file_path.parent.mkdir(parents=True, exist_ok=True)

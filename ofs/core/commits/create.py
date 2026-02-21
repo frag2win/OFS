@@ -82,7 +82,7 @@ def get_file_actions(
     parent_files = {}
     if parent_commit and commits_dir:
         # Import here to avoid circular dependency
-        from ofs.commands.checkout.execute import build_tree_state
+        from ofs.core.commits.tree import build_tree_state
         parent_tree = build_tree_state(parent_commit.get('id'), commits_dir)
         parent_files = parent_tree
     elif parent_commit:

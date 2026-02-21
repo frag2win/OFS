@@ -9,6 +9,7 @@ from .create import (
 from .save import save_commit
 from .load import load_commit, get_parent_commit, clear_commit_cache
 from .list import list_commits, get_commit_count
+from .tree import build_tree_state
 
 __all__ = [
     "generate_commit_id",
@@ -21,4 +22,5 @@ __all__ = [
     "clear_commit_cache",
     "list_commits",
     "get_commit_count",
+    "build_tree_state",
 ]

@@ -1,17 +1,48 @@
 """Commit management - Load commits from disk.
 
 This module provides utilities for loading commits.
-Includes LRU caching for improved performance on repeated accesses.
+Includes scoped LRU caching for improved performance on repeated accesses.
 """
 
 from pathlib import Path
 from typing import Optional, Dict, Tuple
-from functools import lru_cache
 import json
 
-# Cache for loaded commits: (commit_id, commits_dir_str) -> commit_dict
-_commit_cache: Dict[Tuple[str, str], Optional[dict]] = {}
-_CACHE_MAX_SIZE = 128
+
+class _CommitCache:
+    """Scoped commit cache with bounded size.
+    
+    Cache keys use (commit_id, resolved_commits_dir) tuples to ensure
+    per-repository isolation. The cache is bounded to prevent unbounded
+    memory growth.
+    """
+    __slots__ = ('_store', '_max_size')
+    
+    def __init__(self, max_size: int = 128):
+        self._store: Dict[Tuple[str, str], Optional[dict]] = {}
+        self._max_size = max_size
+    
+    def get(self, key: Tuple[str, str]) -> Tuple[bool, Optional[dict]]:
+        """Get a cached commit. Returns (found, value)."""
+        if key in self._store:
+            cached = self._store[key]
+            return True, dict(cached) if cached else None
+        return False, None
+    
+    def put(self, key: Tuple[str, str], value: Optional[dict]) -> None:
+        """Store a commit in cache, evicting oldest if full."""
+        if len(self._store) >= self._max_size:
+            oldest_key = next(iter(self._store))
+            del self._store[oldest_key]
+        self._store[key] = value
+    
+    def clear(self) -> None:
+        """Clear all cached entries."""
+        self._store.clear()
+
+
+# Module-level cache instance — cleared via clear_commit_cache()
+_cache = _CommitCache()
 
 
 def _load_commit_from_disk(commit_id: str, commits_dir: Path) -> Optional[dict]:
@@ -39,7 +70,8 @@ def _load_commit_from_disk(commit_id: str, commits_dir: Path) -> Optional[dict]:
 def load_commit(commit_id: str, commits_dir: Path) -> Optional[dict]:
     """Load commit by ID with caching.
     
-    Uses an LRU cache to avoid repeated disk reads for the same commit.
+    Uses a scoped LRU cache to avoid repeated disk reads for the same commit.
+    Cache keys include the resolved commits_dir path for per-repo isolation.
     
     Args:
         commit_id: Commit ID (e.g., "003")
@@ -53,28 +85,18 @@ def load_commit(commit_id: str, commits_dir: Path) -> Optional[dict]:
         >>> print(commit["message"])
         "Add authentication"
     """
-    global _commit_cache
-    
-    # Create cache key
     cache_key = (commit_id, str(commits_dir.resolve()))
     
     # Check cache first
-    if cache_key in _commit_cache:
-        # Return a copy to prevent mutation
-        cached = _commit_cache[cache_key]
-        return dict(cached) if cached else None
+    found, cached_value = _cache.get(cache_key)
+    if found:
+        return cached_value
     
     # Load from disk
     result = _load_commit_from_disk(commit_id, commits_dir)
     
-    # Manage cache size (simple LRU: evict oldest if full)
-    if len(_commit_cache) >= _CACHE_MAX_SIZE:
-        # Remove oldest entry (first key)
-        oldest_key = next(iter(_commit_cache))
-        del _commit_cache[oldest_key]
-    
     # Store in cache
-    _commit_cache[cache_key] = result
+    _cache.put(cache_key, result)
     
     # Return a copy to prevent mutation
     return dict(result) if result else None
@@ -84,10 +106,10 @@ def clear_commit_cache() -> None:
     """Clear the commit cache.
     
     Call this after modifying commits on disk to ensure
-    fresh data is loaded.
+    fresh data is loaded. Also called between tests
+    to prevent cross-test contamination.
     """
-    global _commit_cache
-    _commit_cache.clear()
+    _cache.clear()
 
 
 def get_parent_commit(commit_id: str, commits_dir: Path) -> Optional[dict]:

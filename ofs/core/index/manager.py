@@ -12,9 +12,13 @@ class Index:
     Manages the staging area where files are prepared for commit.
     Persists to .ofs/index.json as JSON array.
     
+    Maintains both a list (for ordering/serialization) and a dict
+    (for O(1) lookups by path).
+    
     Attributes:
         index_file: Path to index.json
         _entries: List of index entries (cached in memory)
+        _entries_by_path: Dict mapping path -> entry for O(1) lookup
     """
     
     def __init__(self, index_file: Path):
@@ -25,6 +29,9 @@ class Index:
         """
         self.index_file = index_file
         self._entries = self._load()
+        self._entries_by_path: Dict[str, Dict[str, Any]] = {
+            e["path"]: e for e in self._entries
+        }
     
     def _load(self) -> List[Dict[str, Any]]:
         """Load index from disk.
@@ -61,16 +68,47 @@ class Index:
             >>> index = Index(Path(".ofs/index.json"))
             >>> index.add("src/main.py", "abc123...", {"size": 1024})
         """
-        # Remove existing entry for this path
-        self._entries = [e for e in self._entries if e["path"] != file_path]
-        
-        # Add new entry
+        # Build new entry
         entry = {
             "path": file_path,
             "hash": hash_value,
             **metadata
         }
+        
+        # Remove existing entry for this path (if any)
+        if file_path in self._entries_by_path:
+            self._entries = [e for e in self._entries if e["path"] != file_path]
+        
+        # Add new entry
         self._entries.append(entry)
+        self._entries_by_path[file_path] = entry
+        self._save()
+    
+    def batch_add(self, entries: List[tuple]) -> None:
+        """Add multiple files with a single atomic write.
+        
+        Args:
+            entries: List of (file_path, hash_value, metadata) tuples
+            
+        Example:
+            >>> index.batch_add([
+            ...     ("a.py", "abc...", {"size": 100}),
+            ...     ("b.py", "def...", {"size": 200}),
+            ... ])
+        """
+        for file_path, hash_value, metadata in entries:
+            entry = {
+                "path": file_path,
+                "hash": hash_value,
+                **metadata
+            }
+            # Remove existing entry for this path
+            if file_path in self._entries_by_path:
+                self._entries = [e for e in self._entries if e["path"] != file_path]
+            self._entries.append(entry)
+            self._entries_by_path[file_path] = entry
+        
+        # Single atomic save for all entries
         self._save()
     
     def remove(self, file_path: str) -> bool:
@@ -87,13 +125,13 @@ class Index:
             >>> index.remove("src/main.py")
             True
         """
-        initial_len = len(self._entries)
-        self._entries = [e for e in self._entries if e["path"] != file_path]
+        if file_path not in self._entries_by_path:
+            return False
         
-        if len(self._entries) < initial_len:
-            self._save()
-            return True
-        return False
+        self._entries = [e for e in self._entries if e["path"] != file_path]
+        del self._entries_by_path[file_path]
+        self._save()
+        return True
     
     def get_entries(self) -> List[Dict[str, Any]]:
         """Get all index entries.
@@ -119,6 +157,7 @@ class Index:
             []
         """
         self._entries = []
+        self._entries_by_path = {}
         self._save()
     
     def has_changes(self) -> bool:
@@ -135,7 +174,7 @@ class Index:
         return len(self._entries) > 0
     
     def find_entry(self, file_path: str) -> Optional[Dict[str, Any]]:
-        """Find entry by path.
+        """Find entry by path. O(1) lookup.
         
         Args:
             file_path: Relative path to file
@@ -149,7 +188,5 @@ class Index:
             >>> entry["hash"] if entry else None
             'abc123...'
         """
-        for entry in self._entries:
-            if entry["path"] == file_path:
-                return entry.copy()
-        return None
+        entry = self._entries_by_path.get(file_path)
+        return entry.copy() if entry else None

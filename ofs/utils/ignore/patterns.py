@@ -2,11 +2,56 @@
 
 This module provides functionality to match file paths against ignore patterns,
 similar to .gitignore but simplified for OFS.
+
+Patterns are pre-compiled to regex for efficient repeated matching.
 """
 
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 import fnmatch
+import re
+
+
+# Type alias for compiled pattern: (raw_pattern, name_regex, path_regex, is_negation, is_dir_pattern)
+CompiledPattern = Tuple[str, re.Pattern, re.Pattern, bool, bool]
+
+
+def compile_patterns(patterns: List[str]) -> List[CompiledPattern]:
+    """Pre-compile ignore patterns to regex for efficient matching.
+    
+    Args:
+        patterns: List of glob-style patterns (supports '!' negation)
+        
+    Returns:
+        List of compiled pattern tuples
+    """
+    compiled = []
+    
+    for pattern in patterns:
+        if not pattern:
+            continue
+            
+        is_negation = pattern.startswith('!')
+        raw = pattern[1:] if is_negation else pattern
+        
+        # Handle directory patterns (ending with /)
+        is_dir_pattern = raw.endswith('/')
+        if is_dir_pattern:
+            raw = raw[:-1]
+        
+        # Handle **/ prefix by creating a pattern that matches the basename
+        match_raw = raw
+        if match_raw.startswith("**/"):
+            match_raw = match_raw[3:]
+        
+        # Compile regex for filename matching
+        name_regex = re.compile(fnmatch.translate(match_raw))
+        # Compile regex for full path matching
+        path_regex = re.compile(fnmatch.translate(raw))
+        
+        compiled.append((raw, name_regex, path_regex, is_negation, is_dir_pattern))
+    
+    return compiled
 
 
 def should_ignore(path: Path, patterns: List[str], repo_root: Path = None) -> bool:
@@ -34,67 +79,83 @@ def should_ignore(path: Path, patterns: List[str], repo_root: Path = None) -> bo
     if not patterns:
         return False
     
+    # Pre-compile patterns
+    compiled = compile_patterns(patterns)
+    return should_ignore_compiled(path, compiled, repo_root)
+
+
+def should_ignore_compiled(path: Path, compiled: List[CompiledPattern], repo_root: Path = None) -> bool:
+    """Check if path should be ignored using pre-compiled patterns.
+    
+    Use this when matching many files against the same pattern set for performance.
+    
+    Args:
+        path: Path to check
+        compiled: Pre-compiled patterns from compile_patterns()
+        repo_root: Optional repository root for relative path calculation
+        
+    Returns:
+        bool: True if path should be ignored
+    """
     # Get path parts for matching
-    path_str = str(path)
+    path_str = str(path).replace("\\", "/")
     path_name = path.name
     
     # Try to get relative path if repo_root provided
     if repo_root:
         try:
             rel_path = path.relative_to(repo_root)
-            path_str = str(rel_path)
+            path_str = str(rel_path).replace("\\", "/")
         except ValueError:
             pass
     
-    # Process patterns in order, tracking ignore state
+    # Process compiled patterns in order, tracking ignore state
     ignored = False
     
-    for pattern in patterns:
-        # Handle negation patterns
-        if pattern.startswith('!'):
-            negate_pattern = pattern[1:]
-            if _matches_pattern(path_name, path_str, negate_pattern):
+    for raw, name_regex, path_regex, is_negation, is_dir_pattern in compiled:
+        matched = _matches_compiled(path_name, path_str, raw, name_regex, path_regex, is_dir_pattern)
+        
+        if matched:
+            if is_negation:
                 ignored = False  # Un-ignore
-        else:
-            if _matches_pattern(path_name, path_str, pattern):
+            else:
                 ignored = True  # Ignore
     
     return ignored
 
 
-def _matches_pattern(path_name: str, path_str: str, pattern: str) -> bool:
-    """Check if path matches a single pattern.
+def _matches_compiled(
+    path_name: str, path_str: str, raw: str,
+    name_regex: re.Pattern, path_regex: re.Pattern,
+    is_dir_pattern: bool
+) -> bool:
+    """Check if path matches a single compiled pattern.
     
     Args:
         path_name: File/directory name only
-        path_str: Full path string
-        pattern: Pattern to match
+        path_str: Full path string (forward slashes)
+        raw: Raw pattern string (without ! prefix or trailing /)
+        name_regex: Pre-compiled regex for filename matching
+        path_regex: Pre-compiled regex for full path matching
+        is_dir_pattern: Whether original pattern ended with /
         
     Returns:
         bool: True if matches
     """
-    # Handle directory patterns (ending with /)
-    if pattern.endswith('/'):
-        dir_pattern = pattern[:-1]  # Remove trailing slash
-        # Check if path starts with this directory
-        if path_str.startswith(dir_pattern + '/') or path_str.startswith(dir_pattern + '\\'):
+    # Handle directory patterns
+    if is_dir_pattern:
+        if path_str.startswith(raw + '/'):
             return True
-        if path_name == dir_pattern or path_str == dir_pattern:
+        if path_name == raw or path_str == raw:
             return True
     
-    # Direct match on filename
-    if fnmatch.fnmatch(path_name, pattern):
+    # Match on filename
+    if name_regex.match(path_name):
         return True
     
-    # Match on full path (for directory patterns)
-    if fnmatch.fnmatch(path_str, pattern):
+    # Match on full path
+    if path_regex.match(path_str):
         return True
-    
-    # Match on path parts (for **/pattern style)
-    if pattern.startswith("**/"):
-        pattern_without_prefix = pattern[3:]
-        if fnmatch.fnmatch(path_name, pattern_without_prefix):
-            return True
     
     return False
 

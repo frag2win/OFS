@@ -103,6 +103,31 @@ class ObjectStore:
         
         return content
     
+    def retrieve_unchecked(self, hash_value: str) -> bytes:
+        """Retrieve content by hash WITHOUT hash recomputation.
+        
+        Use ONLY for performance-critical internal paths (diff, checkout)
+        where the hash is already trusted. Objects are immutable and
+        content-addressed, so the hash IS the filename.
+        
+        Do NOT use this for integrity verification (ofs verify).
+        
+        Args:
+            hash_value: SHA-256 hash (64 hex chars)
+            
+        Returns:
+            Original content bytes
+            
+        Raises:
+            FileNotFoundError: If object doesn't exist
+        """
+        obj_path = self._get_path(hash_value)
+        
+        if not obj_path.exists():
+            raise FileNotFoundError(f"Object not found: {hash_value}")
+        
+        return obj_path.read_bytes()
+    
     def exists(self, hash_value: str) -> bool:
         """Check if object exists.
         

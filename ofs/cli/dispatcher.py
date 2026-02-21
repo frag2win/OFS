@@ -68,15 +68,8 @@ def main() -> int:
     
     # Handle global flags
     if hasattr(args, 'no_color') and args.no_color:
-        import os
-        os.environ["NO_COLOR"] = "1"
-        
-        # Also try to set it explicitly if the module is loaded
-        try:
-            from ofs.utils.ui.color import set_color_enabled
-            set_color_enabled(False)
-        except ImportError:
-            pass
+        from ofs.utils.ui.color import set_color_enabled
+        set_color_enabled(False)
     
     if args.command is None:
         parser.print_help()

@@ -12,7 +12,7 @@ from ofs.core.objects.store import ObjectStore
 from ofs.core.commits import load_commit, list_commits
 from ofs.core.refs import resolve_head
 from ofs.utils.diff import compute_file_diff, format_diff_header, is_binary
-from ofs.commands.checkout.execute import build_tree_state
+from ofs.core.commits.tree import build_tree_state
 
 
 def execute(
@@ -97,7 +97,7 @@ def _diff_working_vs_staged(repo: Repository, repo_root: Path) -> int:
         # File exists in working directory
         if file_path.exists():
             working_content = file_path.read_bytes()
-            staged_content = object_store.retrieve(entry['hash'])
+            staged_content = object_store.retrieve_unchecked(entry['hash'])
             
             if working_content != staged_content:
                 has_changes = True
@@ -145,7 +145,7 @@ def _diff_staged_vs_head(repo: Repository, repo_root: Path) -> int:
         
         object_store = ObjectStore(repo.ofs_dir)
         for entry in staged_entries:
-            content = object_store.retrieve(entry['hash'])
+            content = object_store.retrieve_unchecked(entry['hash'])
             _print_file_diff(
                 b'',  # No old content
                 content,
@@ -170,8 +170,8 @@ def _diff_staged_vs_head(repo: Repository, repo_root: Path) -> int:
             head_entry = head_tree[path]
             if staged_entry['hash'] != head_entry['hash']:
                 has_changes = True
-                head_content = object_store.retrieve(head_entry['hash'])
-                staged_content = object_store.retrieve(staged_entry['hash'])
+                head_content = object_store.retrieve_unchecked(head_entry['hash'])
+                staged_content = object_store.retrieve_unchecked(staged_entry['hash'])
                 _print_file_diff(
                     head_content,
                     staged_content,
@@ -182,7 +182,7 @@ def _diff_staged_vs_head(repo: Repository, repo_root: Path) -> int:
         else:
             # New file in staged
             has_changes = True
-            staged_content = object_store.retrieve(staged_entry['hash'])
+            staged_content = object_store.retrieve_unchecked(staged_entry['hash'])
             _print_file_diff(
                 b'',
                 staged_content,
@@ -319,8 +319,8 @@ def _diff_commits(repo: Repository, commit1: str, commit2: str) -> int:
             # Check if modified
             if tree1[path]['hash'] != tree2[path]['hash']:
                 has_changes = True
-                content1 = object_store.retrieve(tree1[path]['hash'])
-                content2 = object_store.retrieve(tree2[path]['hash'])
+                content1 = object_store.retrieve_unchecked(tree1[path]['hash'])
+                content2 = object_store.retrieve_unchecked(tree2[path]['hash'])
                 _print_file_diff(
                     content1,
                     content2,
@@ -337,7 +337,7 @@ def _diff_commits(repo: Repository, commit1: str, commit2: str) -> int:
         elif not in_tree1 and in_tree2:
             # New in tree2
             has_changes = True
-            content2 = object_store.retrieve(tree2[path]['hash'])
+            content2 = object_store.retrieve_unchecked(tree2[path]['hash'])
             _print_file_diff(
                 b'',
                 content2,

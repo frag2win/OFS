@@ -6,7 +6,7 @@ from ofs.core.repository.init import Repository
 from ofs.commands.add import execute as add_execute
 from ofs.commands.commit import execute as commit_execute
 from ofs.commands.checkout import execute as checkout_execute
-from ofs.commands.checkout.execute import build_tree_state
+from ofs.core.commits.tree import build_tree_state
 from ofs.core.commits import clear_commit_cache
 
 
