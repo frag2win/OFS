@@ -1,0 +1,69 @@
+﻿============================= test session starts =============================
+collected 4 items
+
+tests\unit\test_coverage_boost_2.py FFFF                                 [100%]
+
+================================== FAILURES ===================================
+_______ TestDiffWorkingVsCommit.test_diff_working_vs_commit_no_changes ________
+tests\unit\test_coverage_boost_2.py:42: in test_diff_working_vs_commit_no_changes
+    assert result == 0
+E   assert 1 == 0
+---------------------------- Captured stdout setup ----------------------------
+Initialized empty OFS repository in C:\Users\sunanda.AMFIIND\AppData\Local\Temp\pytest-of-sunanda\pytest-143\test_diff_working_vs_commit_no0\.ofs
+Staged 1 file(s)
+[main 001] Initial commit
+ 1 file(s) changed
+ 1 file(s) added
+---------------------------- Captured stdout call -----------------------------
+Error computing diff: 'Repository' object is not iterable
+________ TestDiffWorkingVsCommit.test_diff_working_vs_commit_modified _________
+tests\unit\test_coverage_boost_2.py:52: in test_diff_working_vs_commit_modified
+    assert result == 0
+E   assert 1 == 0
+---------------------------- Captured stdout setup ----------------------------
+Initialized empty OFS repository in C:\Users\sunanda.AMFIIND\AppData\Local\Temp\pytest-of-sunanda\pytest-143\test_diff_working_vs_commit_mo0\.ofs
+Staged 1 file(s)
+[main 001] Initial commit
+ 1 file(s) changed
+ 1 file(s) added
+---------------------------- Captured stdout call -----------------------------
+Error computing diff: 'Repository' object is not iterable
+_________ TestDiffWorkingVsCommit.test_diff_working_vs_commit_deleted _________
+tests\unit\test_coverage_boost_2.py:63: in test_diff_working_vs_commit_deleted
+    assert result == 0
+E   assert 1 == 0
+---------------------------- Captured stdout setup ----------------------------
+Initialized empty OFS repository in C:\Users\sunanda.AMFIIND\AppData\Local\Temp\pytest-of-sunanda\pytest-143\test_diff_working_vs_commit_de0\.ofs
+Staged 1 file(s)
+[main 001] Initial commit
+ 1 file(s) changed
+ 1 file(s) added
+---------------------------- Captured stdout call -----------------------------
+Error computing diff: 'Repository' object is not iterable
+___________ TestDiffWorkingVsCommit.test_diff_working_vs_commit_new ___________
+tests\unit\test_coverage_boost_2.py:73: in test_diff_working_vs_commit_new
+    assert result == 0
+E   assert 1 == 0
+---------------------------- Captured stdout setup ----------------------------
+Initialized empty OFS repository in C:\Users\sunanda.AMFIIND\AppData\Local\Temp\pytest-of-sunanda\pytest-143\test_diff_working_vs_commit_ne0\.ofs
+Staged 1 file(s)
+[main 001] Initial commit
+ 1 file(s) changed
+ 1 file(s) added
+---------------------------- Captured stdout call -----------------------------
+Error computing diff: 'Repository' object is not iterable
+============================== warnings summary ===============================
+tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_no_changes
+tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_modified
+tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_deleted
+tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_new
+  C:\Users\sunanda.AMFIIND\Desktop\OFS\ofs\core\commits\create.py:149: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    timestamp = datetime.utcnow().isoformat() + "Z"
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_no_changes
+FAILED tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_modified
+FAILED tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_deleted
+FAILED tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_new
+======================== 4 failed, 4 warnings in 0.34s ========================
