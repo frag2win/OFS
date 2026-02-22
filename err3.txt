@@ -1,0 +1,89 @@
+﻿============================= test session starts =============================
+collected 4 items
+
+tests\unit\test_coverage_boost_2.py FF.F                                 [100%]
+
+================================== FAILURES ===================================
+_______ TestDiffWorkingVsCommit.test_diff_working_vs_commit_no_changes ________
+
+self = <unit.test_coverage_boost_2.TestDiffWorkingVsCommit object at 0x000001CC91FEED50>
+repo_with_commits = WindowsPath('C:/Users/sunanda.AMFIIND/AppData/Local/Temp/pytest-of-sunanda/pytest-145/test_diff_working_vs_commit_no0')
+capsys = <_pytest.capture.CaptureFixture object at 0x000001CC91FD6510>
+
+    def test_diff_working_vs_commit_no_changes(self, repo_with_commits, capsys):
+        """Diff against HEAD with no working tree changes."""
+        result = diff_execute(commit1="001", repo_root=repo_with_commits)
+>       assert result == 0
+E       assert 1 == 0
+
+tests\unit\test_coverage_boost_2.py:42: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+Initialized empty OFS repository in C:\Users\sunanda.AMFIIND\AppData\Local\Temp\pytest-of-sunanda\pytest-145\test_diff_working_vs_commit_no0\.ofs
+Staged 1 file(s)
+[main 001] Initial commit
+ 1 file(s) changed
+ 1 file(s) added
+---------------------------- Captured stdout call -----------------------------
+Error computing diff: 'file1.txt' is not in the subpath of 'C:\\Users\\sunanda.AMFIIND\\AppData\\Local\\Temp\\pytest-of-sunanda\\pytest-145\\test_diff_working_vs_commit_no0'
+________ TestDiffWorkingVsCommit.test_diff_working_vs_commit_modified _________
+
+self = <unit.test_coverage_boost_2.TestDiffWorkingVsCommit object at 0x000001CC921B0690>
+repo_with_commits = WindowsPath('C:/Users/sunanda.AMFIIND/AppData/Local/Temp/pytest-of-sunanda/pytest-145/test_diff_working_vs_commit_mo0')
+capsys = <_pytest.capture.CaptureFixture object at 0x000001CC921B0B90>
+
+    def test_diff_working_vs_commit_modified(self, repo_with_commits, capsys):
+        """Diff against commit with modified file."""
+        f1 = repo_with_commits / "file1.txt"
+        f1.write_text("modified content")
+    
+        result = diff_execute(commit1="001", repo_root=repo_with_commits)
+>       assert result == 0
+E       assert 1 == 0
+
+tests\unit\test_coverage_boost_2.py:52: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+Initialized empty OFS repository in C:\Users\sunanda.AMFIIND\AppData\Local\Temp\pytest-of-sunanda\pytest-145\test_diff_working_vs_commit_mo0\.ofs
+Staged 1 file(s)
+[main 001] Initial commit
+ 1 file(s) changed
+ 1 file(s) added
+---------------------------- Captured stdout call -----------------------------
+Error computing diff: 'file1.txt' is not in the subpath of 'C:\\Users\\sunanda.AMFIIND\\AppData\\Local\\Temp\\pytest-of-sunanda\\pytest-145\\test_diff_working_vs_commit_mo0'
+___________ TestDiffWorkingVsCommit.test_diff_working_vs_commit_new ___________
+
+self = <unit.test_coverage_boost_2.TestDiffWorkingVsCommit object at 0x000001CC920635C0>
+repo_with_commits = WindowsPath('C:/Users/sunanda.AMFIIND/AppData/Local/Temp/pytest-of-sunanda/pytest-145/test_diff_working_vs_commit_ne0')
+capsys = <_pytest.capture.CaptureFixture object at 0x000001CC921782B0>
+
+    def test_diff_working_vs_commit_new(self, repo_with_commits, capsys):
+        """Diff against commit with new file in working tree."""
+        f2 = repo_with_commits / "file2.txt"
+        f2.write_text("new content")
+    
+        result = diff_execute(commit1="001", repo_root=repo_with_commits)
+>       assert result == 0
+E       assert 1 == 0
+
+tests\unit\test_coverage_boost_2.py:73: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+Initialized empty OFS repository in C:\Users\sunanda.AMFIIND\AppData\Local\Temp\pytest-of-sunanda\pytest-145\test_diff_working_vs_commit_ne0\.ofs
+Staged 1 file(s)
+[main 001] Initial commit
+ 1 file(s) changed
+ 1 file(s) added
+---------------------------- Captured stdout call -----------------------------
+Error computing diff: 'file1.txt' is not in the subpath of 'C:\\Users\\sunanda.AMFIIND\\AppData\\Local\\Temp\\pytest-of-sunanda\\pytest-145\\test_diff_working_vs_commit_ne0'
+============================== warnings summary ===============================
+tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_no_changes
+tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_modified
+tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_deleted
+tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_new
+  C:\Users\sunanda.AMFIIND\Desktop\OFS\ofs\core\commits\create.py:149: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    timestamp = datetime.utcnow().isoformat() + "Z"
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_no_changes
+FAILED tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_modified
+FAILED tests/unit/test_coverage_boost_2.py::TestDiffWorkingVsCommit::test_diff_working_vs_commit_new
+=================== 3 failed, 1 passed, 4 warnings in 0.28s ===================

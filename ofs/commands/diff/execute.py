@@ -231,8 +231,8 @@ def _diff_working_vs_commit(repo: Repository, commit_id: str, repo_root: Path) -
     
     # Add working directory files (excluding ignored)
     from ofs.core.working_tree.scan import scan_working_tree
-    working_files = scan_working_tree(repo_root, repo)
-    all_paths.update(f.relative_to(repo_root).as_posix() for f in working_files)
+    working_files = scan_working_tree(repo_root)
+    all_paths.update(f.as_posix() for f in working_files)
     
     has_changes = False
     
