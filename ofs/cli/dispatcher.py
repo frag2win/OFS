@@ -1,8 +1,85 @@
-"""CLI dispatcher - routes commands to their handlers."""
+"""CLI dispatcher - routes commands to their handlers.
+
+Uses a table-driven command mapping for maintainability.
+"""
 
 import sys
 import argparse
 
+from ofs import __version__
+
+
+# ── Command handler functions ──────────────────────────────────────
+
+def _handle_init(args) -> int:
+    from ofs.core.repository.init import Repository
+    repo = Repository()
+    success = repo.initialize()
+    return 0 if success else 1
+
+
+def _handle_add(args) -> int:
+    from ofs.commands.add import execute
+    return execute(args.paths)
+
+
+def _handle_status(args) -> int:
+    from ofs.commands.status import execute
+    return execute()
+
+
+def _handle_commit(args) -> int:
+    from ofs.commands.commit import execute
+    return execute(args.message)
+
+
+def _handle_log(args) -> int:
+    from ofs.commands.log import execute
+    return execute(
+        limit=getattr(args, 'number', None),
+        oneline=getattr(args, 'oneline', False),
+    )
+
+
+def _handle_checkout(args) -> int:
+    from ofs.commands.checkout import execute
+    return execute(
+        args.commit_id,
+        force=getattr(args, 'force', False),
+    )
+
+
+def _handle_verify(args) -> int:
+    from ofs.commands.verify import execute
+    return execute(
+        verbose=getattr(args, 'verbose', False),
+    )
+
+
+def _handle_diff(args) -> int:
+    from ofs.commands.diff import execute
+    return execute(
+        commit1=getattr(args, 'commit1', None) or None,
+        commit2=getattr(args, 'commit2', None) or None,
+        cached=getattr(args, 'cached', False),
+    )
+
+
+# ── Command dispatch table ────────────────────────────────────────
+
+COMMANDS = {
+    "init":     _handle_init,
+    "add":      _handle_add,
+    "status":   _handle_status,
+    "commit":   _handle_commit,
+    "log":      _handle_log,
+    "checkout": _handle_checkout,
+    "verify":   _handle_verify,
+    "diff":     _handle_diff,
+}
+
+
+# ── Main entry point ──────────────────────────────────────────────
 
 def main() -> int:
     """Main CLI entry point.
@@ -18,7 +95,7 @@ def main() -> int:
     parser.add_argument(
         "--version",
         action="version",
-        version="OFS 1.0.0",
+        version=f"OFS {__version__}",
         help="Show program's version number and exit"
     )
     
@@ -31,7 +108,7 @@ def main() -> int:
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     
     # Init command
-    init_parser = subparsers.add_parser("init", help="Initialize a new OFS repository")
+    subparsers.add_parser("init", help="Initialize a new OFS repository")
     
     # Add command
     add_parser = subparsers.add_parser("add", help="Add files to staging area")
@@ -42,7 +119,7 @@ def main() -> int:
     commit_parser.add_argument("-m", "--message", required=True, help="Commit message")
     
     # Status command
-    status_parser = subparsers.add_parser("status", help="Show repository status")
+    subparsers.add_parser("status", help="Show repository status")
     
     # Log command
     log_parser = subparsers.add_parser("log", help="Show commit history")
@@ -75,59 +152,25 @@ def main() -> int:
         parser.print_help()
         return 0
     
-    # Dispatch to command handlers
+    # Table-driven dispatch
+    handler = COMMANDS.get(args.command)
+    
+    if handler is None:
+        print(f"OFS: Command '{args.command}' not yet implemented")
+        print(f"Available: {', '.join(COMMANDS.keys())}")
+        return 1
+    
     try:
-        if args.command == "add":
-            from ofs.commands.add import execute as add_execute
-            return add_execute(args.paths)
-            
-        elif args.command == "status":
-            from ofs.commands.status import execute as status_execute
-            return status_execute()
-            
-        elif args.command == "commit":
-            from ofs.commands.commit import execute as commit_execute
-            return commit_execute(args.message)
-            
-        elif args.command == "log":
-            from ofs.commands.log import execute as log_execute
-            return log_execute(
-                limit=args.number if hasattr(args, 'number') else None,
-                oneline=args.oneline if hasattr(args, 'oneline') else False
-            )
-            
-        elif args.command == "checkout":
-            from ofs.commands.checkout import execute as checkout_execute
-            return checkout_execute(
-                args.commit_id,
-                force=args.force if hasattr(args, 'force') else False
-            )
-            
-        elif args.command == "verify":
-            from ofs.commands.verify import execute as verify_execute
-            return verify_execute(
-                verbose=args.verbose if hasattr(args, 'verbose') else False
-            )
-            
-        elif args.command == "diff":
-            from ofs.commands.diff import execute as diff_execute
-            return diff_execute(
-                commit1=args.commit1 if hasattr(args, 'commit1') and args.commit1 else None,
-                commit2=args.commit2 if hasattr(args, 'commit2') and args.commit2 else None,
-                cached=args.cached if hasattr(args, 'cached') else False
-            )
-            
-        elif args.command == "init":
-            from ofs.core.repository.init import Repository
-            repo = Repository()
-            success = repo.initialize()
-            return 0 if success else 1
-            
-        else:
-            print(f"OFS: Command '{args.command}' not yet implemented")
-            print("Available: init, add, status, commit, log, checkout, verify")
-            return 1
-            
+        return handler(args)
+    except FileNotFoundError as e:
+        print(f"Error: {str(e)}")
+        return 1
+    except ValueError as e:
+        print(f"Error: {str(e)}")
+        return 1
+    except OSError as e:
+        print(f"Error: {str(e)}")
+        return 1
     except Exception as e:
         print(f"Error: {str(e)}")
         return 1
